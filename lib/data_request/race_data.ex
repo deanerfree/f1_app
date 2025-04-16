@@ -99,11 +99,10 @@ defmodule DataRequest.RaceData do
           location: location
         } = key_data
 
-        Logger.info("Meeting key: #{inspect(key_data)}")
+        Logger.info("key: #{inspect(key_data)}")
 
         case APIClient.get_drivers(meeting_key, session_key) do
           {:ok, drivers} when is_list(drivers) and length(drivers) > 0 ->
-            Logger.info("Drivers data found: #{length(drivers)}")
 
             result =
               %{
@@ -113,15 +112,16 @@ defmodule DataRequest.RaceData do
                 location: location,
                 results:
                   Enum.map(drivers, fn driver ->
+            Logger.info("Drivers data found: #{driver["driver_number"]}")
                     case APIClient.get_position(
                            meeting_key,
                            session_key,
                            driver["driver_number"]
                          ) do
-                      {:ok, position_data} ->
-                        Logger.info("Position data found for driver #{driver["driver_number"]}")
+                      {:ok, position_data} ->#when is_list(position_data) and length(position_data) > 0 ->
+                        Logger.info("Position data: #{inspect(position_data)}")
+                        Logger.info("Driver number: #{driver["driver_number"]}")
                         final_position = List.last(position_data)
-
                         %{
                           broadcast_name: driver["broadcast_name"],
                           constructor: driver["team_name"],
