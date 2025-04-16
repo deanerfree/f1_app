@@ -63,12 +63,8 @@ defmodule DataRequest.APIClient do
   @spec get_position(integer(), integer(), integer()) ::
           {:ok, Types.positions()} | {:error, String.t()}
   def get_position(session_key, meeting_key, num) do
-    Logger.info(
-      "Fetching position data for session_key: #{session_key}, meeting_key: #{meeting_key}, driver_number: #{num}"
-    )
-
     url =
-      "https://api.openf1.org/v1/position?meeting_key=#{meeting_key}&session_key=#{session_key}&driver_number=#{num}"
+      "https://api.openf1.org/v1/position?session_key=#{session_key}&meeting_key=#{meeting_key}&driver_number=#{num}"
 
     get_json(url)
   end

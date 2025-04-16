@@ -14,8 +14,8 @@ defmodule DataRequest.RaceData do
   def get_keys do
     session_data = APIClient.get_session_data()
     meeting_data = APIClient.get_meeting_data()
-    Logger.info("Session data: #{inspect(session_data)}")
-    Logger.info("Meeting data: #{inspect(meeting_data)}")
+    # Logger.info("Session data: #{inspect(session_data)}")
+    # Logger.info("Meeting data: #{inspect(meeting_data)}")
 
     # Extract the last meeting from meeting_data
     meeting =
@@ -32,11 +32,11 @@ defmodule DataRequest.RaceData do
       {:ok, session_data} when is_list(session_data) and length(session_data) > 0 ->
         # Extract the meeting_key from the first session
         session_data = Enum.at(session_data, 0)
-        Logger.info("Session data found: #{inspect(session_data)}")
+        # Logger.info("Session data found: #{inspect(session_data)}")
 
         if Map.has_key?(session_data, "meeting_key") do
-          Logger.info("Meeting key found: #{session_data["meeting_key"]}")
-          Logger.info("Session key found: #{session_data["session_key"]}")
+          # Logger.info("Meeting key found: #{session_data["meeting_key"]}")
+          # Logger.info("Session key found: #{session_data["session_key"]}")
 
           {:ok,
            %{
@@ -71,7 +71,9 @@ defmodule DataRequest.RaceData do
       {:ok, meeting_data} when is_list(meeting_data) and length(meeting_data) > 0 ->
         # Extract the meeting_key from the first session
         meeting = Enum.at(meeting_data, 0)
-        Logger.info("Meeting data found: #{inspect(meeting)}")
+
+        meeting
+        # Logger.info("Meeting data found: #{inspect(meeting)}")
 
       {:ok, []} ->
         Logger.error("Meeting data is empty")
@@ -120,8 +122,6 @@ defmodule DataRequest.RaceData do
                          ) do
                       # when is_list(position_data) and length(position_data) > 0 ->
                       {:ok, position_data} ->
-                        Logger.info("Position data: #{inspect(position_data)}")
-                        Logger.info("Driver number: #{driver["driver_number"]}")
                         final_position = List.last(position_data)
 
                         %{
