@@ -3,14 +3,15 @@ defmodule DataRequest.Router do
   use Plug.Router
   require Logger
 
-  plug Plug.Logger
-  plug :match
-  plug :dispatch
+  plug(Plug.Logger)
+  plug(:match)
+  plug(:dispatch)
 
   get "/" do
     case DataRequest.RaceData.get_results() do
       {:ok, results} ->
         html = generate_html(results)
+
         conn
         |> put_resp_content_type("text/html")
         |> send_resp(200, html)

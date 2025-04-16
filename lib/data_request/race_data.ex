@@ -103,7 +103,6 @@ defmodule DataRequest.RaceData do
 
         case APIClient.get_drivers(meeting_key, session_key) do
           {:ok, drivers} when is_list(drivers) and length(drivers) > 0 ->
-
             result =
               %{
                 country_name: country_name,
@@ -112,16 +111,19 @@ defmodule DataRequest.RaceData do
                 location: location,
                 results:
                   Enum.map(drivers, fn driver ->
-            Logger.info("Drivers data found: #{driver["driver_number"]}")
+                    Logger.info("Drivers data found: #{driver["driver_number"]}")
+
                     case APIClient.get_position(
                            meeting_key,
                            session_key,
                            driver["driver_number"]
                          ) do
-                      {:ok, position_data} ->#when is_list(position_data) and length(position_data) > 0 ->
+                      # when is_list(position_data) and length(position_data) > 0 ->
+                      {:ok, position_data} ->
                         Logger.info("Position data: #{inspect(position_data)}")
                         Logger.info("Driver number: #{driver["driver_number"]}")
                         final_position = List.last(position_data)
+
                         %{
                           broadcast_name: driver["broadcast_name"],
                           constructor: driver["team_name"],
