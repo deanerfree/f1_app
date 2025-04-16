@@ -70,7 +70,7 @@ defmodule DataRequest.Router do
     |> Enum.sort_by(& &1.position)
     |> Enum.map(fn driver ->
       """
-      <tr>
+      <tr style="transition: all 0.3s;" onmouseover="this.style.backgroundColor='##{driver.team_colour}20';" onmouseout="this.style.backgroundColor='';">
         <td>#{driver.position}</td>
         <td>
           <img src="#{driver.image}" class="driver-img" alt="#{driver.driver_name}">
