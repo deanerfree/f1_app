@@ -113,11 +113,9 @@ defmodule DataRequest.RaceData do
                 location: location,
                 results:
                   Enum.map(drivers, fn driver ->
-                    Logger.info("Drivers data found: #{driver["driver_number"]}")
-
                     case APIClient.get_position(
-                           meeting_key,
                            session_key,
+                           meeting_key,
                            driver["driver_number"]
                          ) do
                       # when is_list(position_data) and length(position_data) > 0 ->
@@ -131,7 +129,7 @@ defmodule DataRequest.RaceData do
                           driver_number: driver["driver_number"],
                           image: driver["headshot_url"],
                           name_acronym: driver["name_acronym"],
-                          team_colour: "B6BABD",
+                          team_colour: driver["team_colour"],
                           position: final_position["position"]
                         }
 
