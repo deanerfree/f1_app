@@ -4,7 +4,7 @@ defmodule DataRequest.RaceData do
   """
   require Logger
 
-  alias DataRequest.Types
+  alias DataRequest.Types, as: Types
   alias DataRequest.APIClient
 
   @doc """
@@ -13,20 +13,6 @@ defmodule DataRequest.RaceData do
   @spec get_keys() :: {:ok, Types.race_key_info()} | {:error, String.t()}
   def get_keys do
     session_data = APIClient.get_session_data()
-    meeting_data = APIClient.get_meeting_data()
-    # Logger.info("Session data: #{inspect(session_data)}")
-    # Logger.info("Meeting data: #{inspect(meeting_data)}")
-
-    # Extract the last meeting from meeting_data
-    meeting =
-      case meeting_data do
-        {:ok, meetings} when is_list(meetings) and length(meetings) > 0 ->
-          List.last(meetings)
-
-        _ ->
-          # Empty map as fallback
-          %{}
-      end
 
     case session_data do
       {:ok, session_data} when is_list(session_data) and length(session_data) > 0 ->
@@ -35,17 +21,14 @@ defmodule DataRequest.RaceData do
         # Logger.info("Session data found: #{inspect(session_data)}")
 
         if Map.has_key?(session_data, "meeting_key") do
-          # Logger.info("Meeting key found: #{session_data["meeting_key"]}")
-          # Logger.info("Session key found: #{session_data["session_key"]}")
-
           {:ok,
            %{
              meeting_key: session_data["meeting_key"],
-             session_key: session_data["session_key"],
-             country_name: meeting["country_name"],
-             meeting_official_name: meeting["meeting_official_name"],
-             meeting_name: meeting["meeting_name"],
-             location: meeting["location"]
+             session_key: session_data["session_key"]
+             #    country_name: meeting["country_name"],
+             #    meeting_official_name: meeting["meeting_official_name"],
+             #    meeting_name: meeting["meeting_name"],
+             #    location: meeting["location"]
            }}
         else
           Logger.error("Session data does not contain meeting_key: #{inspect(session_data)}")
@@ -73,7 +56,8 @@ defmodule DataRequest.RaceData do
         meeting = Enum.at(meeting_data, 0)
 
         meeting
-        # Logger.info("Meeting data found: #{inspect(meeting)}")
+
+      # Logger.info("Meeting data found: #{inspect(meeting)}")
 
       {:ok, []} ->
         Logger.error("Meeting data is empty")
@@ -94,54 +78,54 @@ defmodule DataRequest.RaceData do
       {:ok, key_data} ->
         %{
           meeting_key: meeting_key,
-          session_key: session_key,
-          country_name: country_name,
-          meeting_official_name: meeting_official_name,
-          meeting_name: meeting_name,
-          location: location
+          session_key: session_key
         } = key_data
 
         Logger.info("key: #{inspect(key_data)}")
 
         case APIClient.get_drivers(meeting_key, session_key) do
           {:ok, drivers} when is_list(drivers) and length(drivers) > 0 ->
-            result =
-              %{
-                country_name: country_name,
-                meeting_official_name: meeting_official_name,
-                meeting_name: meeting_name,
-                location: location,
-                results:
-                  Enum.map(drivers, fn driver ->
-                    case APIClient.get_position(
-                           session_key,
-                           meeting_key,
-                           driver["driver_number"]
-                         ) do
-                      # when is_list(position_data) and length(position_data) > 0 ->
-                      {:ok, position_data} ->
-                        final_position = List.last(position_data)
+            # Create a task for each driver to fetch their position in parallel
+            driver_tasks =
+              Enum.map(drivers, fn driver ->
+                Task.async(fn ->
+                  case APIClient.get_position(
+                         session_key,
+                         meeting_key,
+                         driver["driver_number"]
+                       ) do
+                    {:ok, position_data} ->
+                      final_position = List.last(position_data)
 
-                        %{
-                          broadcast_name: driver["broadcast_name"],
-                          constructor: driver["team_name"],
-                          driver_name: driver["full_name"],
-                          driver_number: driver["driver_number"],
-                          image: driver["headshot_url"],
-                          name_acronym: driver["name_acronym"],
-                          team_colour: driver["team_colour"],
-                          position: final_position["position"]
-                        }
+                      %{
+                        broadcast_name: driver["broadcast_name"],
+                        constructor: driver["team_name"],
+                        driver_name: driver["full_name"],
+                        driver_number: driver["driver_number"],
+                        image: driver["headshot_url"],
+                        name_acronym: driver["name_acronym"],
+                        team_colour: driver["team_colour"],
+                        position: final_position["position"]
+                      }
 
-                      {:error, err} ->
-                        Logger.error(
-                          "Failed to get position data for driver #{driver["driver_number"]}: #{inspect(err)}"
-                        )
+                    {:error, err} ->
+                      Logger.error(
+                        "Failed to get position data for driver #{driver["driver_number"]}: #{inspect(err)}"
+                      )
 
-                        nil
-                    end
-                  end)
-              }
+                      nil
+                  end
+                end)
+              end)
+
+            # Wait for all tasks to complete (with a timeout)
+            driver_results =
+              driver_tasks
+              |> Enum.map(fn task -> Task.await(task, 5000) end)
+              # Remove any nil results
+              |> Enum.filter(&(&1 != nil))
+
+            result = %{results: driver_results}
 
             # Add a return value for the success case
             {:ok, result}

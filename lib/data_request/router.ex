@@ -8,31 +8,53 @@ defmodule DataRequest.Router do
   plug(:dispatch)
 
   get "/" do
-    case DataRequest.RaceData.get_results() do
-      {:ok, results} ->
-        html = generate_html(results)
+    # Create tasks to run API calls in parallel
+    race_results_task =
+      Task.async(fn ->
+        case DataRequest.RaceData.get_results() do
+          {:ok, results} ->
+            results
 
-        conn
-        |> put_resp_content_type("text/html")
-        |> send_resp(200, html)
+          {:error, reason} ->
+            Logger.error("Failed to get results: #{inspect(reason)}")
+            nil
+        end
+      end)
 
-      {:error, reason} ->
-        conn
-        |> put_resp_content_type("text/html")
-        |> send_resp(500, "<h1>Error</h1><p>#{reason}</p>")
-    end
+    meeting_event_task =
+      Task.async(fn ->
+        case DataRequest.APIClient.get_meeting_data() do
+          {:ok, meeting_event} ->
+            List.last(meeting_event)
+
+          {:error, reason} ->
+            Logger.error("Failed to get meeting event: #{inspect(reason)}")
+            nil
+        end
+      end)
+
+    # Wait for both tasks to complete with timeout
+    race_results = Task.await(race_results_task, 5000)
+    meeting_event = Task.await(meeting_event_task, 5000)
+
+    # Generate HTML with both datasets
+    html = generate_html(race_results, meeting_event)
+
+    conn
+    |> put_resp_content_type("text/html")
+    |> send_resp(200, html)
   end
 
   match _ do
     send_resp(conn, 404, "Not Found")
   end
 
-  defp generate_html(race_data) do
+  defp generate_html(race_data, meeting_event) do
     """
     <!DOCTYPE html>
     <html>
     <head>
-      <title>#{race_data.meeting_name} Results</title>
+      <title>#{meeting_event["meeting_name"]} Results</title>
       <style>
         body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
         h1, h2 { color: #333; }
@@ -44,8 +66,8 @@ defmodule DataRequest.Router do
       </style>
     </head>
     <body>
-      <h1>#{race_data.meeting_official_name}</h1>
-      <h2>#{race_data.location}, #{race_data.country_name}</h2>
+      <h1>#{meeting_event["meeting_official_name"]}</h1>
+      <h2>#{meeting_event["location"]}, #{meeting_event["country_name"]}</h2>
 
       <table>
         <thead>
