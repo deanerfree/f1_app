@@ -8,6 +8,36 @@ defmodule DataRequest.RaceData do
   alias DataRequest.APIClient
 
   @doc """
+  Gets all the meetings and return a collection of locations
+  """
+  # @spec get_all_meetings() :: {:ok, [Types.meeting()]} | {:error, String.t()}
+  def get_all_search_parameters do
+    case APIClient.get_all_meetings() do
+      {:ok, meetings} when is_list(meetings) and length(meetings) > 0 ->
+        {:ok, meetings}
+        locations = Enum.map(meetings, fn meeting ->
+          %{
+            location: meeting["location"],
+            country_name: meeting["country_name"],
+            year: meeting["year"],
+          }
+        end)
+
+        # Logger.info("Meetings found: #{inspect(locations)}")
+        {:ok, locations}
+
+
+      {:ok, []} ->
+        Logger.error("No meetings found")
+        {:error, "No meetings found"}
+
+      err ->
+        Logger.error("Failed to get meetings: #{inspect(err)}")
+        err
+    end
+  end
+
+  @doc """
   Gets the meeting and session key for the Bahrain 2025 race
   """
   @spec get_keys(String.t(), String.t()) :: {:ok, Types.race_key_info()} | {:error, String.t()}

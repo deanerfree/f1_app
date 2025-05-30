@@ -4,11 +4,40 @@ defmodule DataRequest.Router do
   require Logger
 
   plug(Plug.Logger)
+  plug(:fetch_query_params)
   plug(:match)
   plug(:dispatch)
+    alias DataRequest.Utils, as: Utils
+  # conn = fetch_query_params(conn)
 
   get "/" do
-    # Create tasks to run API calls in parallel
+
+    if conn.query_params == %{} do
+      {:ok, races} = DataRequest.RaceData.get_all_search_parameters()
+      years_task = Task.async(fn -> Utils.createUniqueList(races, :year) end)
+      locations_task = Task.async(fn -> Utils.createUniqueList(races, :location) end)
+      countries_task = Task.async(fn -> Utils.createUniqueList(races, :country_name) end)
+
+      years = Task.await(years_task, 5000)
+      locations = Task.await(locations_task, 5000)
+      countries = Task.await(countries_task, 5000)
+      |> Enum.sort()
+
+      Logger.info("Available years: #{inspect(years)}")
+      Logger.info("Available locations: #{inspect(locations)}")
+      Logger.info("Available countries: #{inspect(countries)}")
+
+
+      html = generate_init_page(years, countries, locations)
+      send_resp(conn, 200, html)
+    end
+
+    location = conn.query_params["location"] || nil
+    country = conn.query_params["country"] || nil
+    year = conn.query_params["year"] || nil
+
+    Logger.info("Received request for #{location} #{country} #{year}")
+
     race_results_task =
       Task.async(fn ->
         case DataRequest.RaceData.get_results(location, year) do
