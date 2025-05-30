@@ -10,9 +10,9 @@ defmodule DataRequest.RaceData do
   @doc """
   Gets the meeting and session key for the Bahrain 2025 race
   """
-  @spec get_keys() :: {:ok, Types.race_key_info()} | {:error, String.t()}
-  def get_keys do
-    session_data = APIClient.get_session_data()
+  @spec get_keys(String.t(), String.t()) :: {:ok, Types.race_key_info()} | {:error, String.t()}
+  def get_keys(location, year) do
+    session_data = APIClient.get_session_data(location, year)
 
     case session_data do
       {:ok, session_data} when is_list(session_data) and length(session_data) > 0 ->
@@ -48,9 +48,10 @@ defmodule DataRequest.RaceData do
   @doc """
   Gets the Race data from the meeting
   """
-  @spec get_meeting() :: {:ok, Types.meeting()} | {:error, String.t()}
-  def get_meeting do
-    case APIClient.get_meeting_data() do
+  @spec get_meeting(String.t(), String.t()) :: {:ok, Types.meeting()} | {:error, String.t()}
+  def get_meeting(location, year) do
+    Logger.debug("Fetching meeting data for location: #{location}, year: #{year}")
+    case APIClient.get_meeting_data(location, year) do
       {:ok, meeting_data} when is_list(meeting_data) and length(meeting_data) > 0 ->
         # Extract the meeting_key from the first session
         meeting = Enum.at(meeting_data, 0)
@@ -72,9 +73,9 @@ defmodule DataRequest.RaceData do
   @doc """
   Gets information about the driver results if available
   """
-  @spec get_results() :: {:ok, Types.race_data()} | {:error, String.t()}
-  def get_results do
-    case get_keys() do
+  @spec get_results(String.t(), String.t()) :: {:ok, Types.race_data()} | {:error, String.t()}
+  def get_results(location, year) do
+    case get_keys(location, year) do
       {:ok, key_data} ->
         %{
           meeting_key: meeting_key,

@@ -3,6 +3,7 @@ defmodule DataRequest.APIClient do
   Client for making API requests to the OpenF1 API.
   """
   require Logger
+  require URI
 
   alias DataRequest.Types
 
@@ -33,18 +34,31 @@ defmodule DataRequest.APIClient do
     end
   end
 
-  @spec get_session_data() :: {:ok, Types.sessions()} | {:error, String.t()}
-  def get_session_data do
-    url = "https://api.openf1.org/v1/sessions?country_name=Bahrain&session_name=Race&year=2025"
+  @spec get_session_data(String.t(), String.t()) :: {:ok, Types.sessions()} | {:error, String.t()}
+  def get_session_data(location, year) do
+    location = URI.encode(location)
+    url = "https://api.openf1.org/v1/sessions?location=#{location}&session_name=Race&year=#{year}"
     get_json(url)
   end
 
   @doc """
-    Fetch meeting data
+    Fetch all meetings data
   """
-  @spec get_meeting_data() :: {:ok, Types.meetings()} | {:error, String.t()}
-  def get_meeting_data do
-    url = "https://api.openf1.org/v1/meetings?country_name=Bahrain&year=2025"
+  @spec get_all_meetings() :: {:ok, Types.meetings()} | {:error, String.t()}
+  def get_all_meetings do
+    url = "https://api.openf1.org/v1/meetings"
+    get_json(url)
+  end
+
+  @doc """
+    Fetch meeting data for a specific location and year.
+  """
+  @spec get_meeting_data(String.t(), String.t()) :: {:ok, Types.meetings()} | {:error, String.t()}
+  def get_meeting_data(location, year) do
+    # encode the country and year to ensure they are URL-safe
+    Logger.debug("Fetching meeting data for location: #{location}, year: #{year}")
+    location = URI.encode(location)
+    url = "https://api.openf1.org/v1/meetings?location=#{location}&year=#{year}"
     get_json(url)
   end
 

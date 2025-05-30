@@ -11,7 +11,7 @@ defmodule DataRequest.Router do
     # Create tasks to run API calls in parallel
     race_results_task =
       Task.async(fn ->
-        case DataRequest.RaceData.get_results() do
+        case DataRequest.RaceData.get_results(location, year) do
           {:ok, results} ->
             results
 
@@ -23,7 +23,7 @@ defmodule DataRequest.Router do
 
     meeting_event_task =
       Task.async(fn ->
-        case DataRequest.APIClient.get_meeting_data() do
+        case DataRequest.APIClient.get_meeting_data(location, year) do
           {:ok, meeting_event} ->
             List.last(meeting_event)
 
