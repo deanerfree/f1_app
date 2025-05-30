@@ -63,8 +63,8 @@ defmodule DataRequest.Router do
       end)
 
     # Wait for both tasks to complete with timeout
-    race_results = Task.await(race_results_task, 5000)
-    meeting_event = Task.await(meeting_event_task, 5000)
+    race_results = Task.await(race_results_task, 10000)
+    meeting_event = Task.await(meeting_event_task, 10000)
 
     # Generate HTML with both datasets
     html = generate_html(race_results, meeting_event)
