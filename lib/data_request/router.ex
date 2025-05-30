@@ -78,6 +78,42 @@ defmodule DataRequest.Router do
     send_resp(conn, 404, "Not Found")
   end
 
+  defp generate_init_page(years, countries, locations) do
+    """
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>F1 Data App</title>
+      <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { color: #333; }
+        p { font-size: 1.2em; }
+      </style>
+    </head>
+    <body>
+      <h1>Welcome to the F1 Data Fetch API!</h1>
+      <div>
+        <h3>Use the following query parameters to look up race results:</h3>
+        <form action="/" method="get">
+          <label for="year">Year:</label>
+          <select id="year" name="year" required>
+            <option value="">Select Year</option>
+            #{Enum.map(years, fn year -> "<option value=\"#{year}\">#{year}</option>" end) |> Enum.join("\n")}
+          </select>
+          <br><br>
+          <label for="location">Location:</label>
+          <select id="location" name="location" required>
+            <option value="">Select Location</option>
+            #{Enum.map(locations, fn loc -> "<option value=\"#{loc}\">#{loc}</option>" end) |> Enum.join("\n")}
+          </select>
+          <br><br>
+          <button type="submit">Get Results</button>
+      </div>
+    </body>
+    </html>
+    """
+  end
+
   defp generate_html(race_data, meeting_event) do
     """
     <!DOCTYPE html>
