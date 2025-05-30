@@ -8,6 +8,7 @@ defmodule DataRequest.Application do
   def start(_type, _args) do
     children = [
       # Start the web server
+      {Task.Supervisor, name: DataRequest.TaskSupervisor},
       {Plug.Cowboy, scheme: :http, plug: DataRequest.Router, options: [port: 8080]}
     ]
 
